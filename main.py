@@ -42,16 +42,16 @@ class Vector:
 
 
 class Handler:
-    m = 0.1
-    g = 9.8
+    m = 0.018
+    g = 9.81
 
     r_i = Vector()
     v_i = Vector()
-    p_i = Vector(v_i.x * m, v_i.x * m, v_i.x * m)
+    p_i = Vector(v_i.x * m, v_i.y * m, v_i.z * m)
 
     r_f = Vector()
     v_f = Vector()
-    p_f = Vector(v_f.x * m, v_f.x * m, v_f.x * m)
+    p_f = Vector(v_f.x * m, v_f.y * m, v_f.z * m)
 
     F_g = Vector(0, -m * g, 0)
     net_Force = Vector()
@@ -66,7 +66,8 @@ class Handler:
 
     def update_momentum(self):
         self.calculate_net_force()
-        self.p_f = self.p_i + self.net_Force * self.delta_t
+        delta_p = self.net_Force * self.delta_t
+        self.p_f = self.p_i + delta_p
 
     def update_pos(self):
         v_avg = self.p_f / self.m
@@ -80,13 +81,14 @@ class Handler:
         self.update_momentum()
         self.update_pos()
         self.p_i = self.p_f.copy()
+        self.r_i = self.r_f.copy()
         self.p_f *= 0
 
 
 class Spring:
 
-    t = 2
-    delta_t = 0.01
+    t = 0.1
+    delta_t = 0.05
     iterations = int(round(t / delta_t))
 
     pos_arr = []
@@ -99,17 +101,19 @@ class Spring:
         self.k = k
         self.pos_arr.append(L.copy())
 
+    def addMass(self, mass):
+        s.handler.m += mass
+
     def update(self):
+
+        self.handler.p_i = Vector(-0.02, -0.01, -0.02)
+        self.handler.r_i = Vector(-0.2, -0.61, 0)
 
         for i in range(0, self.iterations):
             self.handler.forces = []
 
             s = self.L.get_mag() - self.L_0
             F = self.L.get_unit() * -self.k * s
-            # k = random.randrange(-1, 1) / 500
-            # F_r = Vector(k, k, k)
-            # F_r = self.L.copy() * i * s
-            # self.handler.add_force(F_r)
             self.handler.add_force(F)
             self.handler.add_force(self.handler.F_g)
 
@@ -120,12 +124,17 @@ class Spring:
             self.pos_arr.append(self.handler.r_f)
 
 
-s = Spring(Vector(0, 0.1, 0), 0.8, 18)
+s = Spring(Vector(-0.2, -0.61, 0), 0.325, 0.870)
+s.addMass(0.018)
 s.update()
 
 xs = [s.delta_t * i for i in range(0, s.iterations + 1)]
 ys = [pos.getY() for pos in s.pos_arr]
 
-plt.plot(xs, ys)
-plt.axis([0, xs[len(xs) - 1], -0.5, 1.5])
-plt.show()
+# plt.plot(xs, ys)
+# plt.axis([0, xs[len(xs) - 1], -0.5, 1.5])
+# plt.show()
+
+print(s.handler.r_f)
+print(s.iterations)
+
